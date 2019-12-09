@@ -69,5 +69,22 @@
         </div>
     </div>
 </body>
+<script>
+    // 获取用户详情
+    $.ajax({
+        url: BigNew.user_detail,
+        type: 'get',
+        success: function (res) {
+            if (res.code === 200) {
+                console.log(res.data.nickname)
+                $('#inputEmail1').val(res.data.nickname),
+                $('#inputEmail2').val(res.data.username),
+                $('#inputEmail3').val(res.data.email),
+                $('.user_pic').attr('src',res.data.userPic),
+                $('#inputEmail4').val(res.data.password)
+            }
+        }
+    })
+</script>
 
 </html>
