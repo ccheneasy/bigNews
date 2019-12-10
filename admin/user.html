@@ -21,6 +21,7 @@
         </div>
         <div class="container-fluid common_con">
             <form class="form-horizontal article_form" id="form">
+                <input type="hidden" name="userPic" id="nb_hide">
                 <div class="form-group">
                     <label for="inputEmail1" class="col-sm-2 control-label">用户名称：</label>
                     <div class="col-sm-4">
@@ -76,14 +77,59 @@
         type: 'get',
         success: function (res) {
             if (res.code === 200) {
-                console.log(res.data.nickname)
+                // console.log(res.data.nickname)
                 $('#inputEmail1').val(res.data.nickname),
-                $('#inputEmail2').val(res.data.username),
-                $('#inputEmail3').val(res.data.email),
-                $('.user_pic').attr('src',res.data.userPic),
-                $('#inputEmail4').val(res.data.password)
+                    $('#inputEmail2').val(res.data.username),
+                    $('#inputEmail3').val(res.data.email),
+                    $('.user_pic').attr('src', res.data.userPic),
+                    $('#inputEmail4').val(res.data.password)
             }
         }
+    })
+
+    // 给file注册change事件
+    $('#exampleInputFile').on('change', function (e) {
+        let file = this.files[0];
+        // 将文件转为src路径
+        let url = URL.createObjectURL(file);
+        console.log(url);
+
+        $('.user_pic').attr('src', url);
+        $('#nb_hide').val(url);
+    })
+
+    // 编辑个人信息,给按钮注册点击事件
+    $('.btn-edit').on('click', function (e) {
+        e.preventDefault();
+        // 获取表单元素
+        // let data  = $('#form').serialize();
+        var form = $('#form')[0];
+        var userdata = new FormData(form);
+        $.post({
+            url: BigNew.user_edit,
+            data: userdata,
+            // 阻止编译
+            processData: false,
+            // 不要设置请求类型
+            contentType: false,
+            success: function (res) {
+                if (res.code === 200) {
+                    $.get({
+                        url: BigNew.user_info,
+                        success: function (res) {
+                            if (res.code === 200) {
+                                parent.$('.user_info img').attr('src', res.data
+                                .userPic);
+                                parent.$('.user_info span').html('欢迎&nbsp;&nbsp;' + res
+                                    .data.nickname + '');
+                                parent.$('.user_center_link>img').attr('src', res.data
+                                    .userPic);
+                            }
+                        }
+                    })
+                }
+            }
+        })
     })
 </script>
 
