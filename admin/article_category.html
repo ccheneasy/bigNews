@@ -43,22 +43,51 @@
                 <tfoot>
                     <tr>
                         <td colspan="3" class="text-center">
-                            <a href="javascript:void(0)" class="btn btn-success" id="xinzengfenlei" data-toggle="modal"
-                                data-target="#myModal">新增分类</a>
+                            <a href="javascript:void(0)" class="btn btn-success" id="xinzengfenlei" data-toggle="modal" data-target="#exampleModal">新增分类</a>
                         </td>
                     </tr>
                 </tfoot>
             </table>
         </div>
     </div>
+
+    <!-- 模态框 -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel">
+            <div class="modal-dialog" role="document">
+              <div class="modal-content">
+                <div class="modal-header">
+                  <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                  <h4 class="modal-title" id="exampleModalLabel">新增分类</h4>
+                </div>
+                <div class="modal-body">
+                  <form>
+                    <div class="form-group">
+                      <label for="recipient-name" class="control-label">名称</label>
+                      <input type="text" class="form-control" id="recipient-name">
+                    </div>
+                    <div class="form-group">
+                      <label for="message-text" class="control-label">Slug</label>
+                      <textarea class="form-control" id="message-text"></textarea>
+                    </div>
+                  </form>
+                </div>
+                <div class="modal-footer">
+                  <button type="button" class="btn btn-default" data-dismiss="modal">取消</button>
+                  <button type="button" class="btn btn-primary" id="btn-confirm">新增</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+    <!-- 模板引擎 -->
     <script type="text/html" id="tp">
         {{each data}}
         <tr>
             <td>{{$value.name}}</td>
             <td>{{$value.slug}}</td>
             <td class="text-center">
-                <a href="javascript:void(0)" data-toggle="modal" class=" btn btn-info btn-xs">编辑</a>
-                <a href="javascript:void(0)" class="btn btn-danger btn-xs">删除</a>
+                <a href="javascript:void(0)"  data-toggle="modal" data-target="#exampleModal" class=" btn btn-info btn-xs" data-id="{{$value.id}}">编辑</a>
+                <a href="javascript:void(0)" class="btn btn-danger btn-xs" data-id="{{$value.id}}">删除</a>
             </td>
         </tr>
         {{/each}}
@@ -66,7 +95,7 @@
 </body>
 
 <script>
-    // ajax获取文章数据
+    // ajax获取文章数据渲染到页面
     $.get({
         url: BigNew.category_list,
         success: function (res) {
@@ -75,7 +104,105 @@
         }
     })
 
-    
+    // 在模态框显示之前注册事件,获取是新增还是编辑操作
+    $('#exampleModal').on('show.bs.modal',function(e){
+        let target = e.relatedTarget;
+        // 判断
+        if(target == $('#xinzengfenlei')[0]){
+            $('#exampleModalLabel').text('新增分类')
+            $('#btn-confirm').text('新增');
+            // 默认重置表单元素的内容
+            $('#recipient-name').val(null);
+            $('#message-text').val(null);
+            // reset()重置这个方法是原生对象的
+            // $('from')[0].reset();
+            // 注册点击事件
+            $('#btn-confirm').on('click',function(){
+                let name =$('#recipient-name').val()
+                let slug = $('#message-text').val()
+                if(name.length !== 0 && slug.length !== 0){
+                    $.post({
+                        url:'http://localhost:8080/api/v1/admin/category/add',
+                        data :{
+                            name : name ,
+                            slug: slug
+                        },
+                        success:function(res){
+                            if(res.code ==201){
+                                // 隐藏模态框
+                                $('#exampleModal').modal('hide');
+                                // 刷新当前页面，也可以重新ajax请求最新的数据去渲染到这里
+                                location.reload();
+                            }
+
+                        }
+                    })
+                }else{
+                    alert('请输入正确的数据')
+                }
+            })
+        }else{
+            $('#exampleModalLabel').text('编辑分类')
+            $('#btn-confirm').text('编辑')
+            // 获取当前编辑的id
+            let id = $(target).attr('data-id');
+            // 根据id从服务器获取相应的数据渲染到模态框
+           $.get({
+               url: 'http://localhost:8080/api/v1/admin/category/search',
+               data:{
+                   id :id
+               },
+               success : function(res){
+                    if(res.code === 200){
+                        $('#recipient-name').val(res.data[0].name);
+                        $('#message-text').val(res.data[0].slug)
+                    }
+               }
+           })
+           $('#btn-confirm').on('click',function(){
+                let name =$('#recipient-name').val()
+                let slug = $('#message-text').val()
+                $.post({
+                    url:'http://localhost:8080/api/v1/admin/category/edit',
+                    data: {
+                        id: id,
+                        name: name,
+                        slug: slug,
+                    },
+                    success:function(res){
+                        if(res.code === 200){
+                            // 隐藏模态框
+                            $('#exampleModal').modal('hide');
+                                // 刷新当前页面，也可以重新ajax请求最新的数据去渲染到这里
+                                location.reload();
+                        }else{
+                            alert('请正确的更改')
+                        }
+                    }
+                })
+        })
+        }
+    })
+    // 注册删除事件
+    $('tbody').on('click','.btn-xs',function(e){
+        let id = $(this).attr('data-id')
+        if(confirm('你确定要删除吗')){
+            $(this).parent('tr').remove();
+            $.post({
+                url: 'http://localhost:8080/api/v1/admin/category/delete',
+                data:{
+                    id :id,
+                },
+                success:function(res){
+                    if(res.code ==204 ){
+                        location.reload()
+                    }
+                    
+                }
+            })
+            
+        }
+    })
 </script>
 
 </html>
